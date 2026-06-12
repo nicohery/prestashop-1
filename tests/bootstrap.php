@@ -85,6 +85,12 @@ class Db
     /** @var array Enregistrement des appels a update() */
     public static $updateCalls = [];
 
+    /** @var array File de resultats pour getRow() */
+    private static $mockGetRowResults = [];
+
+    /** @var array Resultat par defaut de getRow() si la file est vide */
+    private static $mockGetRowDefault = [];
+
     public static function getInstance($slave = false)
     {
         if (!self::$instance) {
@@ -103,6 +109,29 @@ class Db
         self::$mockUpdateResults = [];
         self::$mockUpdateDefault = true;
         self::$updateCalls = [];
+        self::$mockGetRowResults = [];
+        self::$mockGetRowDefault = [];
+    }
+
+    /**
+     * Configure le resultat par defaut de getRow()
+     *
+     * @param array|false $result
+     */
+    public static function setMockGetRow($result)
+    {
+        self::$mockGetRowDefault = $result;
+    }
+
+    /**
+     * Configure une file de resultats pour getRow()
+     * (utile quand plusieurs getRow successifs sont attendus)
+     *
+     * @param array $results
+     */
+    public static function setMockGetRowResults(array $results)
+    {
+        self::$mockGetRowResults = $results;
     }
 
     /**
@@ -159,7 +188,11 @@ class Db
 
     public function getRow($query)
     {
-        return [];
+        if (!empty(self::$mockGetRowResults)) {
+            return array_shift(self::$mockGetRowResults);
+        }
+
+        return self::$mockGetRowDefault;
     }
 
     public function Insert_ID()
@@ -385,6 +418,7 @@ class Ciklik
     public const CONFIG_MODE = 'CIKLIK_MODE';
     public const CONFIG_HOST = 'CIKLIK_HOST';
     public const CONFIG_USE_FREQUENCY_MODE = 'CIKLIK_FREQUENCY_MODE';
+    public const CONFIG_FREQUENCIES_ATTRIBUTE_GROUP_ID = 'CIKLIK_FREQUENCIES_ATTRIBUTE_GROUP_ID';
     public const CONFIG_DEBUG_LOGS_ENABLED = 'CIKLIK_DEBUG_LOGS_ENABLED';
     public const CONFIG_ENABLE_ENGAGEMENT = 'CIKLIK_ENABLE_ENGAGEMENT';
     public const CONFIG_ENGAGEMENT_INTERVAL = 'CIKLIK_ENGAGEMENT_INTERVAL';

@@ -113,6 +113,10 @@
                             {if $allow_change_next_billing === '1'}
                                 {include file="module:ciklik/views/templates/front/actions/changeRebillDate.tpl" subscription=$subscription}
                             {/if}
+                            {if $enable_skip_next_delivery === '1'}
+                                <br>
+                                {include file="module:ciklik/views/templates/front/actions/skipNextDelivery.tpl" subscription=$subscription}
+                            {/if}
                         {/if}
                     </td>
                     <td class="text-sm-center order-actions">

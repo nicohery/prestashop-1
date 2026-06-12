@@ -8,6 +8,8 @@
 use PrestaShop\Module\Ciklik\Api\Subscription;
 use PrestaShop\Module\Ciklik\Data\CartFingerprintData;
 use PrestaShop\Module\Ciklik\Data\SubscriptionData;
+use PrestaShop\Module\Ciklik\Helpers\IntervalHelper;
+use PrestaShop\Module\Ciklik\Helpers\SkipCadenceResolver;
 use PrestaShop\Module\Ciklik\Helpers\SubscriptionHelper;
 use PrestaShop\Module\Ciklik\Helpers\UuidHelper;
 use PrestaShop\Module\Ciklik\Managers\CiklikCombination;
@@ -73,6 +75,9 @@ class CiklikSubscriptionModuleFrontController extends ModuleFrontController
                 break;
             case 'newdate':
                 $this->newdate();
+                break;
+            case 'skip':
+                $this->skip();
                 break;
             case 'updateaddress':
                 $this->updateaddress();
@@ -183,6 +188,74 @@ class CiklikSubscriptionModuleFrontController extends ModuleFrontController
             }
         } else {
             $this->success[] = $this->module->l('Your subscription renewal date has been updated.', 'subscription');
+        }
+
+        $this->redirectWithNotifications($this->context->link->getModuleLink('ciklik', 'account'));
+    }
+
+    /**
+     * Reporte la prochaine livraison d'un cycle (« sauter une livraison »).
+     *
+     * Avance next_billing d'un intervalle sans résilier l'abonnement. La cadence est lue sur
+     * le corps de l'abonnement (interval/interval_count au niveau racine), avec repli sur la
+     * fréquence du fingerprint en mode fréquence.
+     */
+    private function skip()
+    {
+        $uuid = UuidHelper::getFromRequest('uuid');
+        if (null === $uuid) {
+            $this->errors[] = $this->module->l('Invalid subscription identifier.', 'subscription');
+            $this->redirectWithNotifications($this->context->link->getModuleLink('ciklik', 'account'));
+
+            return;
+        }
+
+        $subscriptionApi = new Subscription($this->context->link);
+        $current = $subscriptionApi->getOne($uuid);
+
+        try {
+            $subscriptionData = SubscriptionData::create($current['body']);
+        } catch (\InvalidArgumentException $e) {
+            $this->errors[] = $this->module->l('Unable to read subscription data. Please try again later.', 'subscription');
+            $this->redirectWithNotifications($this->context->link->getModuleLink('ciklik', 'account'));
+
+            return;
+        }
+
+        $cadence = SkipCadenceResolver::resolve(
+            $current['body'],
+            $subscriptionData->external_fingerprint->frequency_id,
+            $subscriptionData->contents
+        );
+
+        if (null === $cadence) {
+            $this->errors[] = $this->module->l('Unable to determine the subscription frequency.', 'subscription');
+            $this->redirectWithNotifications($this->context->link->getModuleLink('ciklik', 'account'));
+
+            return;
+        }
+
+        try {
+            $newDate = IntervalHelper::addIntervalToDate($subscriptionData->next_billing, $cadence['interval'], $cadence['interval_count']);
+        } catch (\InvalidArgumentException $e) {
+            $this->errors[] = $this->module->l('Unable to determine the subscription frequency.', 'subscription');
+            $this->redirectWithNotifications($this->context->link->getModuleLink('ciklik', 'account'));
+
+            return;
+        }
+
+        $result = $subscriptionApi->update($uuid, ['next_billing' => $newDate->format('Y-m-d')]);
+
+        if (!empty($result['errors'])) {
+            foreach ($result['errors'] as $error) {
+                $errorMessage = is_array($error) ? $error[0] : $error;
+                $this->errors[] = Tools::htmlentitiesUTF8($errorMessage);
+            }
+        } else {
+            $this->success[] = sprintf(
+                $this->module->l('Your next delivery has been postponed to %s.', 'subscription'),
+                $newDate->format('d/m/Y')
+            );
         }
 
         $this->redirectWithNotifications($this->context->link->getModuleLink('ciklik', 'account'));

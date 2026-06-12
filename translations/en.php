@@ -432,3 +432,8 @@ $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_6a7068fd190fb4caa59a6e
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_787ad0b7a17de4ad6b1711bbf8d79fcb'] = 'Subscription';
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_543ffc111d45d9c3a0cba2026eec14ef'] = 'One-off purchase';
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_e130919e23bb4fd2f80d56b31e8b1d7d'] = 'Frequency:';
+$_MODULE['<{ciklik}prestashop>subscription_5e3997cb2f1aff8363e1c31fae61d05f'] = 'Unable to determine the subscription frequency.';
+$_MODULE['<{ciklik}prestashop>subscription_432e75444e63870de2d4d3459c7c262b'] = 'Your next delivery has been postponed to %s.';
+$_MODULE['<{ciklik}prestashop>skipnextdelivery_9fbae8eb38cf98cf856e9d0f44120e34'] = 'Skip next delivery';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_e9e4f50f631c9491921f7e7d7edfc337'] = 'Allow skipping the next delivery';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_40593a1c7174b397044fa14a3634d5da'] = 'Lets customers postpone their next delivery by one cycle from their account, without cancelling.';

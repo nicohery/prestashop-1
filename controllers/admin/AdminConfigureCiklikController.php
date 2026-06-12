@@ -241,6 +241,14 @@ class AdminConfigureCiklikController extends ModuleAdminController
                         'cast' => 'intval',
                         'required' => false,
                     ],
+                    Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY => [
+                        'type' => 'bool',
+                        'title' => $this->l('Allow skipping the next delivery'),
+                        'desc' => $this->l('Lets customers postpone their next delivery by one cycle from their account, without cancelling.'),
+                        'validation' => 'isBool',
+                        'cast' => 'intval',
+                        'required' => false,
+                    ],
                     Ciklik::CONFIG_DEBUG_LOGS_ENABLED => [
                         'type' => 'bool',
                         'title' => $this->l('Enable debug logs'),
@@ -472,6 +480,14 @@ class AdminConfigureCiklikController extends ModuleAdminController
                     Ciklik::CONFIG_ALLOW_CHANGE_NEXT_BILLING => [
                         'type' => 'bool',
                         'title' => $this->l('Allow next payment date modification'),
+                        'validation' => 'isBool',
+                        'cast' => 'intval',
+                        'required' => false,
+                    ],
+                    Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY => [
+                        'type' => 'bool',
+                        'title' => $this->l('Allow skipping the next delivery'),
+                        'desc' => $this->l('Lets customers postpone their next delivery by one cycle from their account, without cancelling.'),
                         'validation' => 'isBool',
                         'cast' => 'intval',
                         'required' => false,

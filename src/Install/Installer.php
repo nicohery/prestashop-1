@@ -94,7 +94,8 @@ class Installer
             && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ORDER_THREAD_STATUS, 'open')
             && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_FREQUENCY_PRICE_BASE, 'gross')
             && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ENABLE_CREATION_ORDER_STATE, '0')
-            && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_CREATION_ORDER_STATE, '0');
+            && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_CREATION_ORDER_STATE, '0')
+            && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY, '0');
     }
 
     /**
@@ -119,6 +120,7 @@ class Installer
             \Ciklik::CONFIG_ENGAGEMENT_INTERVAL,
             \Ciklik::CONFIG_ENGAGEMENT_INTERVAL_COUNT,
             \Ciklik::CONFIG_ALLOW_CHANGE_NEXT_BILLING,
+            \Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY,
             \Ciklik::CONFIG_ENABLE_CUSTOMER_GROUP_ASSIGNMENT,
             \Ciklik::CONFIG_CUSTOMER_GROUP_TO_ASSIGN,
             \Ciklik::CONFIG_ENABLE_CHANGE_INTERVAL,

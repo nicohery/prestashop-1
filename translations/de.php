@@ -432,3 +432,8 @@ $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_6a7068fd190fb4caa59a6e
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_787ad0b7a17de4ad6b1711bbf8d79fcb'] = 'Abonnement';
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_543ffc111d45d9c3a0cba2026eec14ef'] = 'Einmaliger Kauf';
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_e130919e23bb4fd2f80d56b31e8b1d7d'] = 'Frequenz:';
+$_MODULE['<{ciklik}prestashop>subscription_5e3997cb2f1aff8363e1c31fae61d05f'] = 'Die Abonnementfrequenz konnte nicht ermittelt werden.';
+$_MODULE['<{ciklik}prestashop>subscription_432e75444e63870de2d4d3459c7c262b'] = 'Ihre nächste Lieferung wurde auf den %s verschoben.';
+$_MODULE['<{ciklik}prestashop>skipnextdelivery_9fbae8eb38cf98cf856e9d0f44120e34'] = 'Nächste Lieferung überspringen';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_e9e4f50f631c9491921f7e7d7edfc337'] = 'Überspringen der nächsten Lieferung erlauben';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_40593a1c7174b397044fa14a3634d5da'] = 'Ermöglicht es Kunden, ihre nächste Lieferung um einen Zyklus zu verschieben, ohne zu kündigen.';

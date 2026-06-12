@@ -44,6 +44,7 @@ class CiklikAccountModuleFrontController extends ModuleFrontController
             'subcription_base_link' => Tools::getShopDomainSsl(true) . '/ciklik/subscription',
             'enable_engagement' => Configuration::get(Ciklik::CONFIG_ENABLE_ENGAGEMENT),
             'allow_change_next_billing' => Configuration::get(Ciklik::CONFIG_ALLOW_CHANGE_NEXT_BILLING),
+            'enable_skip_next_delivery' => Configuration::get(Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY),
             'engagement_interval' => Configuration::get(Ciklik::CONFIG_ENGAGEMENT_INTERVAL),
             'engagement_interval_count' => (int) Configuration::get(Ciklik::CONFIG_ENGAGEMENT_INTERVAL_COUNT),
             'addresses' => $this->context->customer->getAddresses($this->context->language->id),

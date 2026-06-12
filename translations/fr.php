@@ -432,3 +432,8 @@ $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_6a7068fd190fb4caa59a6e
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_787ad0b7a17de4ad6b1711bbf8d79fcb'] = 'Abonnement';
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_543ffc111d45d9c3a0cba2026eec14ef'] = 'Achat unique';
 $_MODULE['<{ciklik}prestashop>displaycartextraproductinfo_e130919e23bb4fd2f80d56b31e8b1d7d'] = 'Fréquence :';
+$_MODULE['<{ciklik}prestashop>subscription_5e3997cb2f1aff8363e1c31fae61d05f'] = 'Impossible de déterminer la fréquence de l\'abonnement.';
+$_MODULE['<{ciklik}prestashop>subscription_432e75444e63870de2d4d3459c7c262b'] = 'Votre prochaine livraison a été reportée au %s.';
+$_MODULE['<{ciklik}prestashop>skipnextdelivery_9fbae8eb38cf98cf856e9d0f44120e34'] = 'Sauter la prochaine livraison';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_e9e4f50f631c9491921f7e7d7edfc337'] = 'Autoriser le report de la prochaine livraison';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_40593a1c7174b397044fa14a3634d5da'] = 'Permet au client de reporter sa prochaine livraison d\'un cycle depuis son compte, sans résilier.';
