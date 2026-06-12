@@ -43,6 +43,51 @@ class CiklikValidationModuleFrontController extends ModuleFrontController
             $this->redirectToCheckout();
         }
 
+        // Idempotence (cas légitime) : une commande existe déjà pour CE panier. Cela arrive
+        // quand le push serveur (OrderGateway) a validé la commande avant que le navigateur
+        // du client n'atteigne cette URL — fallback volontaire si l'utilisateur a fermé son
+        // onglet ou subi une coupure après le paiement —, ou en cas de double soumission.
+        // On ne recrée rien : on renvoie le client vers la confirmation de SA commande.
+        if ($this->context->cart->orderExists()) {
+            $existingOrderId = (int) Db::getInstance()->getValue(
+                'SELECT id_order FROM ' . _DB_PREFIX_ . 'orders WHERE id_cart = ' . (int) $this->context->cart->id
+            );
+            $this->redirectToConfirmation($customer, $existingOrderId);
+
+            return;
+        }
+
+        // Appartenance : si le client est déjà lié à un compte Ciklik, la commande validée
+        // doit appartenir à ce même compte (empêche l'usage de l'identifiant de commande
+        // d'un autre client). Lors d'une première souscription, aucun lien n'existe encore :
+        // la garde anti-rejeu ci-dessous et le secure_key du panier assurent la sécurité.
+        $existingLink = CiklikCustomer::getByIdCustomer((int) $customer->id);
+        if (!empty($existingLink['ciklik_uuid']) && $existingLink['ciklik_uuid'] !== $orderData->ciklik_user_uuid) {
+            $this->redirectToCheckout();
+        }
+
+        // Anti-rejeu : ce ciklik_order_id est déjà rattaché à une AUTRE commande PrestaShop
+        // (le panier courant, lui, n'a pas de commande — vérifié juste au-dessus). Le
+        // `ciklik_order_id` transite en clair dans l'URL de retour (aucune signature) : sans
+        // cette garde, un client pourrait rejouer un identifiant de commande « completed »
+        // sur un panier neuf et obtenir une commande payée sans paiement réel.
+        if (null !== $orderData->prestashop_order_id) {
+            $this->redirectToCheckout();
+        }
+
+        // Anti-rejeu auto-suffisant : `prestashop_order_id` n'est renseigné côté Ciklik qu'au
+        // moment du push serveur. Entre la création de la commande par cette voie front et ce
+        // push, la transaction de paiement est déjà inscrite dans `order_payment` ; si une
+        // commande porte déjà cette transaction, c'est un rejeu sur un panier neuf → on bloque.
+        if (!empty($orderData->paid_transaction_id)) {
+            $transactionAlreadyUsed = (int) Db::getInstance()->getValue(
+                'SELECT COUNT(*) FROM ' . _DB_PREFIX_ . 'order_payment WHERE `transaction_id` = "' . pSQL($orderData->paid_transaction_id) . '"'
+            );
+            if ($transactionAlreadyUsed > 0) {
+                $this->redirectToCheckout();
+            }
+        }
+
         $orderValidationData = OrderValidationData::create($this->context->cart, $orderData);
 
         // Statut différencié pour les créations d'abonnement
@@ -76,6 +121,17 @@ class CiklikValidationModuleFrontController extends ModuleFrontController
             'subscription_uuid' => Tools::getValue('ciklik_subscription_uuid'),
         ]);
 
+        $this->redirectToConfirmation($customer, (int) $this->module->currentOrder);
+    }
+
+    /**
+     * Redirige le client vers la page de confirmation d'une commande existante.
+     *
+     * @param Customer $customer Client propriétaire du panier (pour le secure_key)
+     * @param int $orderId ID de la commande PrestaShop à confirmer
+     */
+    private function redirectToConfirmation(Customer $customer, $orderId)
+    {
         Tools::redirect($this->context->link->getPageLink(
             'order-confirmation',
             true,
@@ -83,7 +139,7 @@ class CiklikValidationModuleFrontController extends ModuleFrontController
             [
                 'id_cart' => (int) $this->context->cart->id,
                 'id_module' => (int) $this->module->id,
-                'id_order' => (int) $this->module->currentOrder,
+                'id_order' => (int) $orderId,
                 'key' => $customer->secure_key,
             ]
         ));

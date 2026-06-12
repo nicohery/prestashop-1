@@ -39,15 +39,28 @@ class OrderGateway extends AbstractGateway implements EntityGateway
 
         $orderData = (new \PrestaShop\Module\Ciklik\Api\Order($context->link))->getOne((int) \Tools::getValue('ciklik_order_id'));
 
-        // Garde d'idempotence : la commande existe déjà (retry côté Ciklik)
+        // Garde d'idempotence : la commande existe déjà (retry côté Ciklik).
+        // On renvoie la commande existante même si le fetch API a échoué ($orderData null) ;
+        // les étapes post-création ne sont rejouées que si les données commande sont valides
+        // (applyPostCreationSteps exige un OrderData : un null provoquerait un TypeError).
         if ($cart->orderExists()) {
             $orderId = $this->getOrderIdByCart($cart);
-            $this->applyPostCreationSteps($orderId, $cart, $orderData);
+            if ($orderData instanceof OrderData) {
+                $this->applyPostCreationSteps($orderId, $cart, $orderData);
+            }
             $this->sendOrderResponse($orderId, $cart);
         }
 
         if (!$orderData instanceof OrderData) {
             (new Response())->setBody(['error' => 'Order has not been retrieved'])->sendBadRequest();
+        }
+
+        // Anti-rejeu (défense en profondeur) : une commande Ciklik déjà rattachée à une
+        // commande PrestaShop ne doit pas être recréée. L'idempotence par panier ci-dessus
+        // couvre les retries à l'identique ; cette garde couvre le cas d'un même
+        // ciklik_order_id renvoyé avec un prestashop_cart_id différent.
+        if (null !== $orderData->prestashop_order_id) {
+            (new Response())->setBody(['error' => 'Order already linked to a PrestaShop order'])->sendConflict();
         }
 
         $orderValidationData = OrderValidationData::create($cart, $orderData);
