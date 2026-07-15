@@ -38,7 +38,7 @@ class Ciklik extends PaymentModule
 {
     use Account;
 
-    const VERSION = '1.21.0';
+    const VERSION = '1.22.0';
     const CONFIG_API_TOKEN = 'CIKLIK_API_TOKEN';
     const CONFIG_MODE = 'CIKLIK_MODE';
     const CONFIG_HOST = 'CIKLIK_HOST';
@@ -97,7 +97,7 @@ class Ciklik extends PaymentModule
         // Doit rester un littéral : le validateur PrestaShop Addons lit ce champ
         // par regex et refuse toute expression non-littérale (self::VERSION, etc.).
         // À garder synchronisé avec la constante VERSION ci-dessus.
-        $this->version = '1.21.0';
+        $this->version = '1.22.0';
         $this->author = 'Ciklik';
         $this->currencies = true;
         $this->currencies_mode = 'checkbox';
@@ -1413,23 +1413,37 @@ class Ciklik extends PaymentModule
         }
 
         $cart = $this->context->cart;
+
+        if (!Validate::isLoadedObject($cart)) {
+            return '';
+        }
+
         $idLang = (int) $this->context->language->id;
 
-        // Fréquence enregistrée pour chaque produit du panier
-        $query = new DbQuery();
-        $query->select('cif.product_id, cf.name');
-        $query->from('ciklik_items_frequency', 'cif');
-        $query->innerJoin('ciklik_frequency', 'cf', 'cf.id_frequency = cif.frequency_id');
-        $query->where('cif.cart_id = ' . (int) $cart->id);
-        $results = Db::getInstance()->executeS($query);
+        // Produits réellement présents au panier. Sert à écarter les lignes de
+        // fréquence orphelines : la suppression d'une ligne panier via l'icône
+        // poubelle passe par Cart::deleteProduct(), qui ne déclenche pas
+        // actionCartUpdateQuantityBefore, donc ne nettoie pas ciklik_items_frequency.
+        $cartProductIds = [];
+        foreach ($cart->getProducts() as $product) {
+            $cartProductIds[(int) $product['id_product']] = true;
+        }
 
+        if (empty($cartProductIds)) {
+            return '';
+        }
+
+        // Fréquences enregistrées pour ce panier, restreintes aux produits présents.
+        // Déduplication sur frequency_id : le nom est un libellé éditable en BO,
+        // deux fréquences distinctes peuvent le partager.
         $subscriptionProductIds = [];
-        $frequencyNames = [];
-        if ($results) {
-            foreach ($results as $row) {
-                $subscriptionProductIds[(int) $row['product_id']] = true;
-                $frequencyNames[$row['name']] = true;
+        $frequencyIds = [];
+        foreach (CiklikItemFrequency::getByCart((int) $cart->id) as $row) {
+            if (!isset($cartProductIds[(int) $row['product_id']])) {
+                continue;
             }
+            $subscriptionProductIds[(int) $row['product_id']] = true;
+            $frequencyIds[(int) $row['frequency_id']] = true;
         }
 
         // Aucun abonnement au panier : rien à afficher
@@ -1438,26 +1452,39 @@ class Ciklik extends PaymentModule
         }
 
         // Panier mixte : au moins un produit sans abonnement
-        $hasNoSubscription = false;
-        foreach ($cart->getProducts() as $product) {
-            if (!isset($subscriptionProductIds[(int) $product['id_product']])) {
-                $hasNoSubscription = true;
-                break;
-            }
-        }
+        $hasNoSubscription = count(array_diff_key($cartProductIds, $subscriptionProductIds)) > 0;
 
         $alertMixed = (bool) Configuration::get(self::CONFIG_CART_ALERT_MIXED_ENABLED) && $hasNoSubscription;
-        $alertFrequencies = (bool) Configuration::get(self::CONFIG_CART_ALERT_FREQ_ENABLED) && count($frequencyNames) > 1;
+        $alertFrequencies = (bool) Configuration::get(self::CONFIG_CART_ALERT_FREQ_ENABLED) && count($frequencyIds) > 1;
 
         $this->context->smarty->assign([
-            'ciklik_footer_message' => Configuration::get(self::CONFIG_CART_FOOTER_MESSAGE, $idLang),
+            'ciklik_footer_message' => $this->purifyCartFooterMessage(Configuration::get(self::CONFIG_CART_FOOTER_MESSAGE, $idLang)),
             'ciklik_alert_mixed' => $alertMixed,
-            'ciklik_alert_mixed_message' => Configuration::get(self::CONFIG_CART_ALERT_MIXED_MESSAGE, $idLang),
+            'ciklik_alert_mixed_message' => $this->purifyCartFooterMessage(Configuration::get(self::CONFIG_CART_ALERT_MIXED_MESSAGE, $idLang)),
             'ciklik_alert_frequencies' => $alertFrequencies,
-            'ciklik_alert_frequencies_message' => Configuration::get(self::CONFIG_CART_ALERT_FREQ_MESSAGE, $idLang),
+            'ciklik_alert_frequencies_message' => $this->purifyCartFooterMessage(Configuration::get(self::CONFIG_CART_ALERT_FREQ_MESSAGE, $idLang)),
         ]);
 
         return $this->display(__FILE__, 'views/templates/hook/displayShoppingCartFooter.tpl');
+    }
+
+    /**
+     * Purifie un message HTML configuré en BO avant rendu front : le template
+     * l'affiche en nofilter pour autoriser le HTML simple (lien vers les CGV),
+     * la purification neutralise scripts et gestionnaires d'événements quel que
+     * soit le profil BO qui a saisi la valeur.
+     *
+     * @param string|false $message Valeur de Configuration::get (false si non définie)
+     *
+     * @return string
+     */
+    private function purifyCartFooterMessage($message)
+    {
+        if (!$message) {
+            return '';
+        }
+
+        return Tools::purifyHTML($message);
     }
 
     /**
