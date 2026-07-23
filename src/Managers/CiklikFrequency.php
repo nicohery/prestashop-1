@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author    Metrogeek SAS <support@ciklik.co>
  * @copyright Since 2017 Metrogeek SAS
@@ -83,6 +84,27 @@ class CiklikFrequency
     public static function getFrequencyById(int $id_frequency)
     {
         return \Db::getInstance()->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'ciklik_frequency` WHERE `id_frequency` = ' . $id_frequency);
+    }
+
+    /**
+     * Retrouve une fréquence par son interval.
+     *
+     * Fallback rebill : les fingerprints legacy n'ont pas de frequency_id,
+     * Ciklik transmet alors l'interval de l'abonnement pour retrouver la
+     * fréquence (et sa remise) par correspondance.
+     *
+     * @param string $interval day|week|month|year
+     * @param int $interval_count
+     *
+     * @return array|bool
+     */
+    public static function getByInterval(string $interval, int $interval_count)
+    {
+        return \Db::getInstance()->getRow(
+            'SELECT * FROM `' . _DB_PREFIX_ . 'ciklik_frequency`'
+            . " WHERE `interval` = '" . pSQL($interval) . "'"
+            . ' AND `interval_count` = ' . (int) $interval_count
+        );
     }
 
     public static function getAll()

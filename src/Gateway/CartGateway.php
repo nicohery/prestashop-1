@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author    Metrogeek SAS <support@ciklik.co>
  * @copyright Since 2017 Metrogeek SAS
@@ -18,7 +19,6 @@ use PrestaShop\Module\Ciklik\Managers\CiklikCustomization;
 use PrestaShop\Module\Ciklik\Managers\CiklikFrequency;
 use PrestaShop\Module\Ciklik\Managers\CiklikItemFrequency;
 use PrestaShop\Module\Ciklik\Managers\DeliveryModuleManager;
-use Product;
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -103,6 +103,41 @@ class CartGateway extends AbstractGateway implements EntityGateway
         $cart->setDeliveryOption($delivery_option);
         $cart->id_carrier = $carrier->id;
         $cart->update();
+
+        /*
+         * Fallback fréquence pour les fingerprints legacy sans frequency_id :
+         * Ciklik transmet l'interval de l'abonnement, on résout la fréquence
+         * correspondante et on l'injecte comme si elle avait été fournie.
+         * Le hook actionCartUpdateQuantityBefore (qui pose la remise via
+         * SpecificPrice) et cartResponse (qui reconstruit le fingerprint,
+         * réparé au passage) la consomment tous deux via Tools::getValue.
+         *
+         * Uniquement en mode fréquence : en mode déclinaison le frequency_id
+         * n'existe pas (la fréquence est portée par la déclinaison) et la
+         * table ciklik_frequency n'est pas utilisée.
+         */
+        if (\Configuration::get(\Ciklik::CONFIG_USE_FREQUENCY_MODE)
+            && !\Tools::getValue('ciklik_frequency')
+            && \Tools::getIsset('ciklik_frequency_interval')) {
+            $fallbackFrequency = CiklikFrequency::getByInterval(
+                (string) \Tools::getValue('ciklik_frequency_interval'),
+                (int) \Tools::getValue('ciklik_frequency_interval_count', 1)
+            );
+
+            if (!empty($fallbackFrequency['id_frequency'])) {
+                $_POST['ciklik_frequency'] = (int) $fallbackFrequency['id_frequency'];
+            } else {
+                \PrestaShopLogger::addLog(
+                    'Ciklik rebill frequency fallback: no frequency found for interval '
+                    . \Tools::getValue('ciklik_frequency_interval')
+                    . ' x' . (int) \Tools::getValue('ciklik_frequency_interval_count', 1),
+                    2,
+                    null,
+                    'ciklik',
+                    $cart->id
+                );
+            }
+        }
 
         $variants = \Tools::getValue('products', null);
 
@@ -373,14 +408,28 @@ class CartGateway extends AbstractGateway implements EntityGateway
 
         $ciklik_frequency = \Tools::getValue('ciklik_frequency', null);
 
+        /*
+         * Fréquence retenue pour le fingerprint : la dernière fréquence NON VIDE
+         * rencontrée dans la boucle. Historiquement, $frequency était simplement
+         * écrasée à chaque itération : un panier mixte (produit abonnement +
+         * produit one-shot itéré en dernier) produisait un fingerprint SANS
+         * frequency_id, et tous les renouvellements de l'abonnement partaient
+         * plein tarif (la remise de fréquence n'était jamais posée au rebill).
+         */
+        $fingerprintFrequency = null;
+
         foreach ($summary['products'] as $product) {
             $customized_datas = \Product::getAllCustomizedDatas($cart->id, null, true, $cart->id_shop, (int) $product['id_customization']);
+
+            $frequency = null;
 
             if (\Configuration::get(\Ciklik::CONFIG_USE_FREQUENCY_MODE) && $withLinks === true) {
                 // Récupère la fréquence depuis la personnalisation
                 // si on est dans un contexte de panier utilisateur (en ligne)
                 $frequencyItem = CiklikItemFrequency::getByCartAndProduct((int) $cart->id, (int) $product['id_product']);
-                $frequency = CiklikFrequency::getFrequencyById((int) $frequencyItem['frequency_id']);
+                if (!empty($frequencyItem['frequency_id'])) {
+                    $frequency = CiklikFrequency::getFrequencyById((int) $frequencyItem['frequency_id']);
+                }
             }
             if (\Configuration::get(\Ciklik::CONFIG_USE_FREQUENCY_MODE) && $withLinks === false && $ciklik_frequency) {
                 // Récupère la fréquence depuis la personnalisation
@@ -390,6 +439,10 @@ class CartGateway extends AbstractGateway implements EntityGateway
 
             if (!\Configuration::get(\Ciklik::CONFIG_USE_FREQUENCY_MODE)) {
                 $frequency = CiklikFrequency::getByIdProductAttribute((int) $product['id_product_attribute']);
+            }
+
+            if (!empty($frequency['id_frequency'])) {
+                $fingerprintFrequency = $frequency;
             }
 
             $items[] = [
@@ -437,7 +490,7 @@ class CartGateway extends AbstractGateway implements EntityGateway
             'total_ttc' => $summary['total_price'],
             'items' => $items,
             'relay_options' => [],
-            'fingerprint' => CartFingerprintData::fromCart($cart, $upsells, isset($frequency['id_frequency']) ? (int) $frequency['id_frequency'] : null)->encodeDatas(),
+            'fingerprint' => CartFingerprintData::fromCart($cart, $upsells, !empty($fingerprintFrequency['id_frequency']) ? (int) $fingerprintFrequency['id_frequency'] : null)->encodeDatas(),
             'use_frequency_mode' => (bool) \Configuration::get(\Ciklik::CONFIG_USE_FREQUENCY_MODE),
         ];
 
@@ -548,5 +601,4 @@ class CartGateway extends AbstractGateway implements EntityGateway
             return null;
         }
     }
-
 }
