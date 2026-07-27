@@ -38,7 +38,7 @@ class Ciklik extends PaymentModule
 {
     use Account;
 
-    const VERSION = '1.22.0';
+    const VERSION = '1.22.1';
     const CONFIG_API_TOKEN = 'CIKLIK_API_TOKEN';
     const CONFIG_MODE = 'CIKLIK_MODE';
     const CONFIG_HOST = 'CIKLIK_HOST';
@@ -91,7 +91,7 @@ class Ciklik extends PaymentModule
         // Doit rester un littéral : le validateur PrestaShop Addons lit ce champ
         // par regex et refuse toute expression non-littérale (self::VERSION, etc.).
         // À garder synchronisé avec la constante VERSION ci-dessus.
-        $this->version = '1.22.0';
+        $this->version = '1.22.1';
         $this->author = 'Ciklik';
         $this->currencies = true;
         $this->currencies_mode = 'checkbox';
@@ -822,6 +822,15 @@ class Ciklik extends PaymentModule
      */
     private function renderProductSubscriptionOptions(array $params)
     {
+        // Un module tiers (ex. stripe_official) peut ré-exécuter ce hook en passant
+        // l'objet Product brut au lieu du ProductLazyArray présenté par le cœur.
+        // On ne rend que pour l'appel du thème : évite le fatal (accès tableau sur
+        // objet) et un double affichage du sélecteur.
+        if (!isset($params['product'])
+            || (!is_array($params['product']) && !($params['product'] instanceof ArrayAccess))) {
+            return '';
+        }
+
         $idProduct = (int) $params['product']['id_product'];
 
         // Vérifier si au moins une des fonctionnalités est activée
