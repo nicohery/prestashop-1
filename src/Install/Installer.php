@@ -95,7 +95,8 @@ class Installer
             && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_FREQUENCY_PRICE_BASE, 'gross')
             && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ENABLE_CREATION_ORDER_STATE, '0')
             && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_CREATION_ORDER_STATE, '0')
-            && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY, '0');
+            && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ENABLE_SKIP_NEXT_DELIVERY, '0')
+            && (bool) \Configuration::updateGlobalValue(\Ciklik::CONFIG_ENABLE_SUBSCRIPTION_CONSENT, '1');
     }
 
     /**
@@ -130,6 +131,7 @@ class Installer
             \Ciklik::CONFIG_DELEGATE_OPTIONS_DISPLAY,
             \Ciklik::CONFIG_ENABLE_CREATION_ORDER_STATE,
             \Ciklik::CONFIG_CREATION_ORDER_STATE,
+            \Ciklik::CONFIG_ENABLE_SUBSCRIPTION_CONSENT,
         ];
 
         foreach ($keys as $key) {
@@ -262,6 +264,7 @@ class Installer
             'actionAuthentication',
             'actionProductUpdate',
             'actionCiklikCartBeforeRebill',
+            'termsAndConditions',
         ];
 
         // Page commande BO : hook migré (>= 1.7.7) sinon hook legacy

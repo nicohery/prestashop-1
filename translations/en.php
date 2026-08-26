@@ -309,6 +309,7 @@ $_MODULE['<{ciklik}prestashop>ciklik_84cdc76cabf41bd7c961f6ab12f117d8'] = 'year'
 $_MODULE['<{ciklik}prestashop>ciklik_75aeb98e5241592ad6a6c2c4c78a16ef'] = 'years';
 $_MODULE['<{ciklik}prestashop>ciklik_6fc473c3b5128bcdb9a23d270155ddd1'] = 'Every %s';
 $_MODULE['<{ciklik}prestashop>ciklik_3204d99329835a7ddb1240cdd5503bde'] = 'Every %d %s';
+$_MODULE['<{ciklik}prestashop>ciklik_63647e43c1410cb00be657af693601e4'] = 'I confirm that this order contains a subscription that will be renewed automatically';
 
 // AdminConfigureCiklikController - missing entries
 $_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_a02758d758e8bec77a33d7f392eb3f8a'] = 'No currency has been set for this module.';
@@ -437,3 +438,5 @@ $_MODULE['<{ciklik}prestashop>subscription_432e75444e63870de2d4d3459c7c262b'] = 
 $_MODULE['<{ciklik}prestashop>skipnextdelivery_9fbae8eb38cf98cf856e9d0f44120e34'] = 'Skip next delivery';
 $_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_e9e4f50f631c9491921f7e7d7edfc337'] = 'Allow skipping the next delivery';
 $_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_40593a1c7174b397044fa14a3634d5da'] = 'Lets customers postpone their next delivery by one cycle from their account, without cancelling.';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_fc1b2aaa6156d1ab4cbda2b34e5bc2b8'] = 'Require subscription consent at checkout';
+$_MODULE['<{ciklik}prestashop>adminconfigureciklikcontroller_363be34fc836ed8784daf532d33534df'] = 'Adds a mandatory checkbox at the payment step when the cart contains a subscription. The customer must explicitly acknowledge the automatic renewal before placing the order.';
